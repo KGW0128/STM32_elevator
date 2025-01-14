@@ -1,0 +1,3 @@
+../Core/Src/stepper.c:10:6:stepMoter	1
+../Core/Src/stepper.c:20:6:rotateSteps	3
+../Core/Src/stepper.c:46:6:rotateDegrees	1
