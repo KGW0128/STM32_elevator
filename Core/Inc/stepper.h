@@ -42,13 +42,15 @@ static const uint8_t HALF_STEP_SEQ[8][4] =
     };
 
 
+
+
 void stepMoter(uint8_t step);
 
 void rotateSteps(uint16_t steps, uint8_t direction);
 
 void rotateDegrees(uint16_t degrees, uint8_t direction);
 
-
+void Tim11_moter_move(uint8_t direction);
 
 
 

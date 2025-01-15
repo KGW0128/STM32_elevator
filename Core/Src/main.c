@@ -18,6 +18,7 @@
 /* USER CODE END Header */
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
+#include "tim.h"
 #include "usart.h"
 #include "gpio.h"
 
@@ -34,7 +35,17 @@
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
 
+#define UP   0
+#define DOWN 1
+
 uint8_t rxData=0;
+
+extern uint16_t moter_move_i; //모터 회전 횟수
+
+uint8_t moter_turn = 0; //모터 회전 방향
+
+uint8_t floor_num = 2; //층수 저장
+
 
 /* USER CODE END PD */
 
@@ -56,8 +67,16 @@ void SystemClock_Config(void);
 
 void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 {
-  if(GPIO_Pin==GPIO_PIN_2)
+
+
+  if(GPIO_Pin==GPIO_PIN_2)//3층
   {
+    if(floor_num==3)
+    {
+      moter_move_i=0;
+      HAL_TIM_Base_Stop_IT(&htim11);
+    }
+
     if(rxData==0)
     {
       rxData = 1;
@@ -69,19 +88,60 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
   }
 
 
-  if(GPIO_Pin==GPIO_PIN_12)
+  if(GPIO_Pin==GPIO_PIN_12)//2층
+  {
+    if(floor_num==2)
     {
-      if(rxData==0)
-      {
-        rxData = 1;
-      }
-      else
-      {
-        rxData = 0;
-      }
+      moter_move_i=0;
+      HAL_TIM_Base_Stop_IT(&htim11);
     }
 
+    if(rxData==0)
+    {
+      rxData = 1;
+    }
+    else
+    {
+      rxData = 0;
+    }
+  }
+
+
+
+  if(GPIO_Pin==GPIO_PIN_7)//1층
+  {
+    if(floor_num==1)
+    {
+      moter_move_i=0;
+      HAL_TIM_Base_Stop_IT(&htim11);
+    }
+
+    if(rxData==0)
+    {
+      rxData = 1;
+    }
+    else
+    {
+      rxData = 0;
+    }
+  }
+
+
+
 }
+
+
+
+void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
+{
+  if (htim->Instance == TIM11)
+  {
+    Tim11_moter_move(moter_turn);
+    //rotateDegrees(450, DIR_CW);
+  }
+
+}
+
 
 
 /* USER CODE END PFP */
@@ -92,9 +152,9 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 /* USER CODE END 0 */
 
 /**
-  * @brief  The application entry point.
-  * @retval int
-  */
+ * @brief  The application entry point.
+ * @retval int
+ */
 int main(void)
 {
 
@@ -121,10 +181,14 @@ int main(void)
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
   MX_USART2_UART_Init();
+  MX_TIM11_Init();
   /* USER CODE BEGIN 2 */
 
 
-  //rotateDegrees(450, DIR_CW);
+
+  //딜레이 계산용 11번 타이머 활성화(시스템 딜레이 방지용 타이머)
+  HAL_TIM_PWM_Start(&htim11, TIM_CHANNEL_1);
+
 
 
   /* USER CODE END 2 */
@@ -134,11 +198,86 @@ int main(void)
   while (1)
   {
 
+    //    HAL_NVIC_DisableIRQ(EXTI2_IRQn);  // GPIO_PIN_2의 인터럽트 비활성화
+    //    HAL_NVIC_DisableIRQ(EXTI15_10_IRQn);  // GPIO_PIN_12의 인터럽트 비활성화
+    //
+    //    HAL_NVIC_EnableIRQ(EXTI2_IRQn);       // GPIO_PIN_2의 EXTI 활성화
+    //    HAL_NVIC_EnableIRQ(EXTI15_10_IRQn);  // GPIO_PIN_12의 EXTI 활성화
+
+    if(!HAL_GPIO_ReadPin(GPIOC, GPIO_PIN_8))//3층
+    {
+      rxData =0; //led끄기
+
+
+      HAL_TIM_Base_Start_IT(&htim11);
+
+
+      moter_turn = UP; //시계
+
+      floor_num = 3; //3층 저장
+
+
+      //HAL_NVIC_EnableIRQ(EXTI2_IRQn);//pd2키기
+      //HAL_NVIC_DisableIRQ(EXTI15_10_IRQn);//pc12끄기
+      //HAL_NVIC_DisableIRQ(EXTI9_5_IRQn);//pa7끄기
+
+
+    }
+    if(!HAL_GPIO_ReadPin(GPIOC, GPIO_PIN_6))//2층
+    {
+
+      rxData = 0; //led끄기
+
+
+      if (floor_num > 2) // 현재 층이 2층보다 높으면 내려감
+      {
+        moter_turn = DOWN;
+      }
+      else if (floor_num < 2) // 현재 층이 2층보다 낮으면 올라감
+      {
+        moter_turn = UP;
+      }
+
+      floor_num = 2;
+
+      HAL_TIM_Base_Start_IT(&htim11);
+
+
+
+
+
+
+      //HAL_NVIC_DisableIRQ(EXTI2_IRQn);//pd2끄기
+      //HAL_NVIC_EnableIRQ(EXTI15_10_IRQn);//pc12키기
+      //HAL_NVIC_DisableIRQ(EXTI9_5_IRQn);//pa7끄기
+
+    }
+    if(!HAL_GPIO_ReadPin(GPIOC, GPIO_PIN_5))//1층
+    {
+      rxData = 0; //led끄기
+
+
+
+      HAL_TIM_Base_Start_IT(&htim11);
+
+
+      moter_turn = DOWN; //반시계
+
+      floor_num = 1; //1층 저장
+
+
+      //HAL_NVIC_DisableIRQ(EXTI2_IRQn);//pd2끄기
+      //HAL_NVIC_DisableIRQ(EXTI15_10_IRQn);//pc12끄기
+      //HAL_NVIC_EnableIRQ(EXTI9_5_IRQn);//pa7키기
+    }
+
+
+
+
     //물체가 감지되면(센서가 감지되면) led 키기
     if(rxData == 1)
     {
       HAL_GPIO_WritePin(GPIOA, GPIO_PIN_5, 1);
-
     }
     else
     {
@@ -155,22 +294,22 @@ int main(void)
 }
 
 /**
-  * @brief System Clock Configuration
-  * @retval None
-  */
+ * @brief System Clock Configuration
+ * @retval None
+ */
 void SystemClock_Config(void)
 {
   RCC_OscInitTypeDef RCC_OscInitStruct = {0};
   RCC_ClkInitTypeDef RCC_ClkInitStruct = {0};
 
   /** Configure the main internal regulator output voltage
-  */
+   */
   __HAL_RCC_PWR_CLK_ENABLE();
   __HAL_PWR_VOLTAGESCALING_CONFIG(PWR_REGULATOR_VOLTAGE_SCALE1);
 
   /** Initializes the RCC Oscillators according to the specified parameters
-  * in the RCC_OscInitTypeDef structure.
-  */
+   * in the RCC_OscInitTypeDef structure.
+   */
   RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_HSE;
   RCC_OscInitStruct.HSEState = RCC_HSE_ON;
   RCC_OscInitStruct.PLL.PLLState = RCC_PLL_ON;
@@ -185,9 +324,9 @@ void SystemClock_Config(void)
   }
 
   /** Initializes the CPU, AHB and APB buses clocks
-  */
+   */
   RCC_ClkInitStruct.ClockType = RCC_CLOCKTYPE_HCLK|RCC_CLOCKTYPE_SYSCLK
-                              |RCC_CLOCKTYPE_PCLK1|RCC_CLOCKTYPE_PCLK2;
+      |RCC_CLOCKTYPE_PCLK1|RCC_CLOCKTYPE_PCLK2;
   RCC_ClkInitStruct.SYSCLKSource = RCC_SYSCLKSOURCE_PLLCLK;
   RCC_ClkInitStruct.AHBCLKDivider = RCC_SYSCLK_DIV1;
   RCC_ClkInitStruct.APB1CLKDivider = RCC_HCLK_DIV2;
@@ -204,9 +343,9 @@ void SystemClock_Config(void)
 /* USER CODE END 4 */
 
 /**
-  * @brief  This function is executed in case of error occurrence.
-  * @retval None
-  */
+ * @brief  This function is executed in case of error occurrence.
+ * @retval None
+ */
 void Error_Handler(void)
 {
   /* USER CODE BEGIN Error_Handler_Debug */
@@ -220,12 +359,12 @@ void Error_Handler(void)
 
 #ifdef  USE_FULL_ASSERT
 /**
-  * @brief  Reports the name of the source file and the source line number
-  *         where the assert_param error has occurred.
-  * @param  file: pointer to the source file name
-  * @param  line: assert_param error line source number
-  * @retval None
-  */
+ * @brief  Reports the name of the source file and the source line number
+ *         where the assert_param error has occurred.
+ * @param  file: pointer to the source file name
+ * @param  line: assert_param error line source number
+ * @retval None
+ */
 void assert_failed(uint8_t *file, uint32_t line)
 {
   /* USER CODE BEGIN 6 */
