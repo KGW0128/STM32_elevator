@@ -1,0 +1,5 @@
+../Core/Src/I2C_LCD.c:14:6:LCD_Command	2
+../Core/Src/I2C_LCD.c:33:6:LCD_Data	2
+../Core/Src/I2C_LCD.c:51:6:LCD_Init	1
+../Core/Src/I2C_LCD.c:69:6:LCD_String	2
+../Core/Src/I2C_LCD.c:75:6:moveCusor	1
