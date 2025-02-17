@@ -49,7 +49,7 @@
 
 ## 📂 프로젝트 구조
 
-📂 Core
+📂 Core  
 │── 📂 Src  
 │   ├── I2C_LCD.c                        # LCD 통신 관련 코드  
 │   ├── gpio.c                           # GPIO 설정 코드  
@@ -76,7 +76,7 @@
 │   └── usart.h                          # USART 설정 헤더 파일  
 │  
 │── README.md                            # 프로젝트 설명 파일  
-└──
+└──  
 
 ---
 
